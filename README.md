@@ -1,1 +1,1 @@
-# gusok-rollup-create-dist-packagejson
+# @gusok/rollup-create-dist-packagejson
