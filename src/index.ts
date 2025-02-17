@@ -18,6 +18,12 @@ export type CreateDistPackageJsonOptions = {
     | ((packageJson: PackageJson) => Partial<PackageJson>);
 
   /**
+   * 元のpackage.jsonから引き継ぐ項目
+   * デフォルトは`['name', 'version', 'author', 'license']`
+   */
+  inheritProps?: string[];
+
+  /**
    * 入力元ディレクトリ
    * 未指定の場合はカレントディレクトリ
    */
@@ -28,6 +34,11 @@ export type CreateDistPackageJsonOptions = {
    * 未指定の場合はrollupのoutput設定から取得
    */
   outputDir?: string;
+
+  /**
+   * 出力前の仕上げ処理
+   */
+  finish?: (packageJson: PackageJson) => PackageJson;
 };
 
 type Mutable<T> = {
@@ -35,7 +46,7 @@ type Mutable<T> = {
 };
 
 const WORKSPACE_DEPS = /^(?:\*|workspace:.+|portal:.+)$/;
-const MAIN_PROPS = ['name', 'version', 'author', 'license'];
+const INHERIT_PROPS = ['name', 'version', 'author', 'license'];
 
 /**
  * package.jsonを編集しビルド結果のディレクトリに出力するプラグイン
@@ -43,7 +54,13 @@ const MAIN_PROPS = ['name', 'version', 'author', 'license'];
 export default function createDistPackageJson(
   options: CreateDistPackageJsonOptions = {},
 ): Plugin {
-  const { content: base = {}, inputDir, outputDir } = options;
+  const {
+    content = {},
+    inheritProps = INHERIT_PROPS,
+    inputDir,
+    outputDir,
+    finish = (packageJson) => packageJson,
+  } = options;
 
   return {
     name: 'create-dist-packagejson',
@@ -59,7 +76,9 @@ export default function createDistPackageJson(
       const orgPackageJson = readPackageSync(options);
       // ビルドされたパッケージ用のpackage.jsonのベースを取得
       const packageJson =
-        typeof base === 'function' ? base(orgPackageJson) : { ...base };
+        typeof content === 'function'
+          ? content(orgPackageJson)
+          : { ...content };
 
       // バンドルされるモジュール内でimportしているものを全て取得
       const imports = Object.values(bundle).reduce((result, chunk) => {
@@ -73,19 +92,15 @@ export default function createDistPackageJson(
 
       // 全てのimportの中から、開発時用のpackage.jsonのdependenciesに含まれる外部のパッケージを取得
       const orgDeps = orgPackageJson.dependencies || {};
-      const tempDeps: Record<string, string> = {};
+      const dependencies: Record<string, string> = {};
       imports.forEach((item) => {
         if (!item.endsWith('.js')) {
           const tokens = item.split(/[/\\]/);
-          if (tokens.length === 1) {
-            const pkg = tokens[0];
+          for (let i = Math.min(tokens.length, 2); 0 < i; i--) {
+            const pkg = tokens.slice(0, i).join('/');
             if (pkg in orgDeps) {
-              tempDeps[pkg] = orgDeps[pkg];
-            }
-          } else {
-            const pkg = `${tokens[0]}/${tokens[1]}`;
-            if (pkg in orgDeps) {
-              tempDeps[pkg] = orgDeps[pkg];
+              dependencies[pkg] = orgDeps[pkg];
+              break;
             }
           }
         }
@@ -93,41 +108,37 @@ export default function createDistPackageJson(
 
       if (packageJson.dependencies) {
         // baseのdependenciesとマージ
-        Object.assign(tempDeps, packageJson.dependencies);
+        Object.assign(dependencies, packageJson.dependencies);
       }
 
       // ワークスペース内のdependenciesは実際のバージョンに置き換え
-      for (const pkg in tempDeps) {
-        if (WORKSPACE_DEPS.test(tempDeps[pkg])) {
+      for (const pkg in dependencies) {
+        if (WORKSPACE_DEPS.test(dependencies[pkg])) {
           const pkgJson = _getPckageJson(pkg);
           if (pkgJson) {
-            tempDeps[pkg] = pkgJson.version;
+            dependencies[pkg] = pkgJson.version;
           }
         }
       }
-
-      // パッケージ名でソート
-      const dependencies = {};
-      Object.keys(tempDeps)
-        .sort()
-        .forEach((pkg) => {
-          dependencies[pkg] = tempDeps[pkg];
-        });
 
       // dependenciesを出力に反映
       packageJson.dependencies = dependencies;
 
       // 主要なプロパティが未設定で、開発時用のpackage.jsonにあれば設定
-      for (const prop of MAIN_PROPS) {
-        if (!packageJson[prop] && orgPackageJson[prop]) {
-          packageJson[prop] = orgPackageJson[prop];
+      if (inheritProps) {
+        for (const prop of inheritProps) {
+          if (!packageJson[prop] && orgPackageJson[prop]) {
+            packageJson[prop] = orgPackageJson[prop];
+          }
         }
       }
 
       // ビルド先に出力
       const outputPath =
         outputDir || outputOptions.dir || path.dirname(outputOptions.file);
-      writePackageSync(outputPath, sortPackageJson(packageJson), { indent: 2 });
+      writePackageSync(outputPath, sortPackageJson(finish(packageJson)), {
+        indent: 2,
+      });
     },
   };
 }
