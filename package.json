@@ -1,6 +1,6 @@
 {
   "name": "@gusok/rollup-create-dist-packagejson",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Mitsuhiro Seino",
   "license": "MIT",
   "type": "module",
@@ -16,6 +16,7 @@
   ],
   "packageManager": "yarn@4.5.2",
   "dependencies": {
+    "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.0",
     "read-pkg": "^9.0.1",
     "sort-package-json": "^2.14.0",
