@@ -44,9 +44,9 @@ export type CreateDistPackageJsonOptions = {
   outputDir?: string;
 
   /**
-   * 出力前の仕上げ処理
+   * 出力前の加工処理
    */
-  finish?: (packageJson: PackageJson) => PackageJson;
+  processor?: (packageJson: PackageJson) => PackageJson;
 };
 
 type Mutable<T> = {
@@ -68,7 +68,7 @@ export default function createDistPackageJson(
     inputDir,
     packagesDir = '..',
     outputDir,
-    finish = (packageJson) => packageJson,
+    processor = (pkgJson) => pkgJson,
   } = options;
 
   return {
@@ -135,7 +135,7 @@ export default function createDistPackageJson(
       // ビルド先に出力
       const outputPath =
         outputDir || outputOptions.dir || path.dirname(outputOptions.file);
-      writePackageSync(outputPath, sortPackageJson(finish(packageJson)), {
+      writePackageSync(outputPath, sortPackageJson(processor(packageJson)), {
         indent: 2,
       });
     },
@@ -143,8 +143,10 @@ export default function createDistPackageJson(
 }
 
 function _getPckageVersion(packagesDir: string, pkg: string) {
-  const packagesPath = path.resolve(packagesDir);
-  const itemPaths = fg.globSync(`${packagesPath}/**/package.json`);
+  const itemPaths = fg.globSync([
+    `${packagesDir}/**/package.json`,
+    `!${packagesDir}/**/node_modules/**/package.json`,
+  ]);
   for (const itemPath of itemPaths) {
     const packageJson = fs.readJsonSync(itemPath);
     if (packageJson.name === pkg) {

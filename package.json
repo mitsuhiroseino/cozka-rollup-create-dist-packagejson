@@ -1,6 +1,6 @@
 {
   "name": "@gusok/rollup-create-dist-packagejson",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": "Mitsuhiro Seino",
   "license": "MIT",
   "type": "module",
