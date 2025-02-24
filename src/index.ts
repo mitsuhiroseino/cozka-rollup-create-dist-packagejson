@@ -20,7 +20,7 @@ export type CreateDistPackageJsonOptions = {
 
   /**
    * 元のpackage.jsonから引き継ぐ項目
-   * デフォルトは`['name', 'version', 'author', 'license']`
+   * デフォルトは`['name', 'version', 'description', 'repository', 'bugs', 'homepage', 'author', 'contributors', 'license', 'type', 'engines', 'keywords']`
    */
   inheritProps?: string[];
 
@@ -54,7 +54,20 @@ type Mutable<T> = {
 };
 
 const WORKSPACE_DEPS = /^(?:\*|workspace:.+|portal:.+)$/;
-const INHERIT_PROPS = ['name', 'version', 'author', 'license'];
+const INHERIT_PROPS = [
+  'name',
+  'version',
+  'description',
+  'repository',
+  'bugs',
+  'homepage',
+  'author',
+  'contributors',
+  'license',
+  'type',
+  'engines',
+  'keywords',
+];
 
 /**
  * package.jsonを編集しビルド結果のディレクトリに出力するプラグイン

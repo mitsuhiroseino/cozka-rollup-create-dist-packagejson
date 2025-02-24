@@ -1,6 +1,6 @@
 {
   "name": "@gusok/rollup-create-dist-packagejson",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/mitsuhiroseino/gusok-rollup-create-dist-packagejson.git"

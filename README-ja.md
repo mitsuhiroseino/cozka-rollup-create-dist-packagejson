@@ -48,7 +48,7 @@ export default {
 
 - `string[]`
 - 元の `package.json` から継承するプロパティを指定します。
-- デフォルト: `['name', 'version', 'author', 'license']`
+- デフォルト: `['name', 'version', 'description', 'repository', 'bugs', 'homepage', 'author', 'contributors', 'license', 'type', 'engines', 'keywords']`
 
 ### `inputDir`
 

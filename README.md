@@ -47,7 +47,7 @@ export default {
 
 - `string[]`
 - Specifies properties to inherit from the original `package.json`.
-- Default: `['name', 'version', 'author', 'license']`
+- Default: `['name', 'version', 'description', 'repository', 'bugs', 'homepage', 'author', 'contributors', 'license', 'type', 'engines', 'keywords']`
 
 ### `inputDir`
 
