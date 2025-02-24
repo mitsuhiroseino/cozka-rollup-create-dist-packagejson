@@ -2,9 +2,9 @@
 
 **[日本語版READMEはこちら](./README-ja.md)**
 
-`@gusok/rollup-create-dist-packagejson` is a Rollup plugin designed to modify `package.json` during the build process and generate it in an appropriate format in the output directory.  
-It was created with the goal of outputting only the minimum required fields in the `package.json` for publishing to npm,
-as well as flattening the directory structure of the library.
+`@gusok/rollup-create-dist-packagejson` is a Rollup plugin that edits the `package.json` during the build process and outputs it in the appropriate format in the output directory.  
+It was created with the goal of outputting only the minimum required fields in the `package.json` for publishing to npm,  
+as well as assisting in publishing the library with a flat directory structure.
 
 ## Installation
 
@@ -18,9 +18,8 @@ Configure it in `rollup.config.js` as follows:
 
 ```js
 import createDistPackageJson from '@gusok/rollup-create-dist-packagejson';
-import { defineConfig } from 'rollup';
 
-export default defineConfig({
+export default {
   input: 'src/index.ts',
   output: {
     dir: 'dist',
@@ -34,7 +33,7 @@ export default defineConfig({
       },
     }),
   ],
-});
+};
 ```
 
 ## Options
