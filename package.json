@@ -1,6 +1,10 @@
 {
   "name": "@gusok/rollup-create-dist-packagejson",
-  "version": "0.4.0",
+  "version": "0.5.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mitsuhiroseino/gusok-rollup-create-dist-packagejson.git"
+  },
   "author": "Mitsuhiro Seino",
   "license": "MIT",
   "type": "module",
@@ -12,7 +16,10 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "package.json"
+    "package.json",
+    "LICENSE",
+    "README.md",
+    "README-ja.md"
   ],
   "packageManager": "yarn@4.5.2",
   "dependencies": {

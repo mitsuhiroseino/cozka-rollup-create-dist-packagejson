@@ -99,11 +99,11 @@ export default function createDistPackageJson(
         return result;
       }, new Set<string>());
 
-      // 全てのimportの中から、開発時用のpackage.jsonのdependenciesに含まれる外部のパッケージを取得
-      const dependencies = _getExternalDependencies(
-        imports,
-        orgPackageJson.dependencies || {},
-      );
+      // 全てのimportの中から、開発時用のpackage.jsonのdependencies,devDependenciesに含まれる外部のパッケージを取得
+      const dependencies = _getExternalDependencies(imports, {
+        ...orgPackageJson.devDependencies,
+        ...orgPackageJson.dependencies,
+      });
 
       if (packageJson.dependencies) {
         // baseのdependenciesとマージ
@@ -111,9 +111,13 @@ export default function createDistPackageJson(
       }
 
       // ワークスペース内のdependenciesは実際のバージョンに置き換え
+      let versions;
       for (const pkg in dependencies) {
         if (WORKSPACE_DEPS.test(dependencies[pkg])) {
-          const version = _getPckageVersion(packagesDir, pkg);
+          if (!versions) {
+            versions = _getPckageVersions(packagesDir);
+          }
+          const version = versions[pkg];
           if (version) {
             dependencies[pkg] = version;
           }
@@ -142,20 +146,31 @@ export default function createDistPackageJson(
   };
 }
 
-function _getPckageVersion(packagesDir: string, pkg: string) {
+/**
+ * ワークスペース内のパッケージのバージョンを取得する
+ * @param packagesDir 他のパッケージが配置されているディレクトリの相対パス
+ * @return パッケージ名をキー、バージョンを値としたレコード
+ */
+function _getPckageVersions(packagesDir: string) {
   const itemPaths = fg.globSync([
     `${packagesDir}/**/package.json`,
     `!${packagesDir}/**/node_modules/**/package.json`,
   ]);
+  const versions: Record<string, string> = {};
   for (const itemPath of itemPaths) {
     const packageJson = fs.readJsonSync(itemPath);
-    if (packageJson.name === pkg) {
-      return packageJson.version;
-    }
+    versions[packageJson.name] = packageJson.version;
   }
-  return;
+  return versions;
 }
 
+/**
+ * 各ソースコードのimportの情報を基に\
+ * 外部パッケージのみのdependenciesを取得する
+ * @param imports importの情報
+ * @param orgGependencies 元のpackage.jsonのdependencies
+ * @return 外部パッケージのみのdependencies
+ */
 function _getExternalDependencies(
   imports: Set<string>,
   orgGependencies: Record<string, string>,
