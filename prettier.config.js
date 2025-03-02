@@ -9,5 +9,6 @@ export default {
   printWidth: 80,
   trailingComma: 'all',
   endOfLine: 'auto',
-  plugins: ['prettier-plugin-sort-package-json'],
+  organizeImportsSkipDestructiveCodeActions: true,
+  plugins: ['prettier-plugin-organize-imports', 'prettier-plugin-packagejson'],
 };

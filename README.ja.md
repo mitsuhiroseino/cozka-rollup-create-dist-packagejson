@@ -1,11 +1,11 @@
 # @gusok/rollup-create-dist-packagejson
 
-**[English README is available here](./README.md)**
-
 `@gusok/rollup-create-dist-packagejson` は、Rollup のビルドプロセス中に `package.json` を編集し、  
 出力ディレクトリに適切な形式で出力するためのプラグインです。  
 npmへ公開する`package.json`に最低限の項目のみ出力すること、  
 及びフラットなディレクトリ構成でライブラリを公開することへの補助を目的に作成されました。
+
+**[English README is available here](./README.md)**
 
 ## インストール
 

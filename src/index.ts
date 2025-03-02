@@ -1,11 +1,9 @@
+import fg from 'fast-glob';
 import fs from 'fs-extra';
 import path from 'path';
-import { Options as ReadOptions, readPackageSync } from 'read-pkg';
 import { NormalizedOutputOptions, OutputBundle, Plugin } from 'rollup';
-import { writePackageSync } from 'write-pkg';
 import sortPackageJson from 'sort-package-json';
 import { PackageJson } from 'type-fest';
-import fg from 'fast-glob';
 
 /**
  * オプション
@@ -49,10 +47,6 @@ export type CreateDistPackageJsonOptions = {
   processor?: (packageJson: PackageJson) => PackageJson;
 };
 
-type Mutable<T> = {
-  -readonly [K in keyof T]: T[K];
-};
-
 const WORKSPACE_DEPS = /^(?:\*|workspace:.+|portal:.+)$/;
 const INHERIT_PROPS = [
   'name',
@@ -68,6 +62,11 @@ const INHERIT_PROPS = [
   'engines',
   'keywords',
 ];
+const DEPENDENCIES_PROP_NAMES = [
+  'dependencies',
+  'peerDependencies',
+  'optionalDependencies',
+];
 
 /**
  * package.jsonを編集しビルド結果のディレクトリに出力するプラグイン
@@ -78,7 +77,7 @@ export default function createDistPackageJson(
   const {
     content = {},
     inheritProps = INHERIT_PROPS,
-    inputDir,
+    inputDir = process.cwd(),
     packagesDir = '..',
     outputDir,
     processor = (pkgJson) => pkgJson,
@@ -91,11 +90,9 @@ export default function createDistPackageJson(
       bundle: OutputBundle,
     ) => {
       // 開発時用のpackage.jsonを取得
-      const options: Mutable<ReadOptions> = { normalize: false };
-      if (inputDir) {
-        options.cwd = inputDir;
-      }
-      const orgPackageJson = readPackageSync(options);
+      const orgPackageJson = fs.readJsonSync(inputDir, {
+        encoding: 'utf8',
+      });
       // ビルドされたパッケージ用のpackage.jsonのベースを取得
       const packageJson =
         typeof content === 'function'
@@ -112,33 +109,20 @@ export default function createDistPackageJson(
         return result;
       }, new Set<string>());
 
-      // 全てのimportの中から、開発時用のpackage.jsonのdependencies,devDependenciesに含まれる外部のパッケージを取得
-      const dependencies = _getExternalDependencies(imports, {
-        ...orgPackageJson.devDependencies,
-        ...orgPackageJson.dependencies,
-      });
-
-      if (packageJson.dependencies) {
-        // baseのdependenciesとマージ
-        Object.assign(dependencies, packageJson.dependencies);
-      }
-
-      // ワークスペース内のdependenciesは実際のバージョンに置き換え
-      let versions;
-      for (const pkg in dependencies) {
-        if (WORKSPACE_DEPS.test(dependencies[pkg])) {
-          if (!versions) {
-            versions = _getPckageVersions(packagesDir);
-          }
-          const version = versions[pkg];
-          if (version) {
-            dependencies[pkg] = version;
-          }
+      // dependencies関連の項目を処理
+      for (const propName of DEPENDENCIES_PROP_NAMES) {
+        const dependencies = _createDependencies(
+          orgPackageJson[propName] as Record<string, string>,
+          packageJson[propName] as Record<string, string>,
+          imports,
+          packagesDir,
+        );
+        if (dependencies) {
+          packageJson[propName] = dependencies;
+        } else {
+          delete packageJson[propName];
         }
       }
-
-      // dependenciesを出力に反映
-      packageJson.dependencies = dependencies;
 
       // 指定のプロパティが未設定で、開発時用のpackage.jsonにあれば設定
       if (inheritProps) {
@@ -152,8 +136,9 @@ export default function createDistPackageJson(
       // ビルド先に出力
       const outputPath =
         outputDir || outputOptions.dir || path.dirname(outputOptions.file);
-      writePackageSync(outputPath, sortPackageJson(processor(packageJson)), {
-        indent: 2,
+      fs.writeJsonSync(outputPath, sortPackageJson(processor(packageJson)), {
+        encoding: 'utf8',
+        spaces: 2,
       });
     },
   };
@@ -178,15 +163,61 @@ function _getPckageVersions(packagesDir: string) {
 }
 
 /**
+ * パッケージの依存関係を定義した項目を作成する
+ * @param orgDependencies 元のpackage.jsonの依存関係
+ * @param userDependencies ユーザーの指定した依存関係
+ * @param imports 全ソースのimport情報
+ * @param packagesDir ワークスページのパッケージの保存先ディレクトリ
+ * @returns 依存関係
+ */
+function _createDependencies(
+  orgDependencies: Record<string, string>,
+  userDependencies: Record<string, string>,
+  imports: Set<string>,
+  packagesDir: string,
+) {
+  // 全てのimportの中から、開発時用のpackage.jsonのdependenciesに含まれる外部のパッケージを取得
+  const dependencies = orgDependencies
+    ? _getExternalDependencies(imports, orgDependencies)
+    : {};
+
+  if (userDependencies) {
+    // baseのdependenciesとマージ
+    Object.assign(dependencies, userDependencies);
+  }
+
+  // ワークスペース内のdependenciesは実際のバージョンに置き換え
+  let versions;
+  for (const pkg in dependencies) {
+    if (WORKSPACE_DEPS.test(dependencies[pkg])) {
+      if (!versions) {
+        versions = _getPckageVersions(packagesDir);
+      }
+      const version = versions[pkg];
+      if (version) {
+        dependencies[pkg] = version;
+      }
+    }
+  }
+
+  // dependenciesを返す
+  if (Object.keys(dependencies).length) {
+    return dependencies;
+  } else {
+    return undefined;
+  }
+}
+
+/**
  * 各ソースコードのimportの情報を基に\
  * 外部パッケージのみのdependenciesを取得する
  * @param imports importの情報
- * @param orgGependencies 元のpackage.jsonのdependencies
+ * @param orgDependencies 元のpackage.jsonのdependencies
  * @return 外部パッケージのみのdependencies
  */
 function _getExternalDependencies(
   imports: Set<string>,
-  orgGependencies: Record<string, string>,
+  orgDependencies: Record<string, string>,
 ) {
   const dependencies: Record<string, string> = {};
   imports.forEach((item) => {
@@ -194,8 +225,8 @@ function _getExternalDependencies(
       const tokens = item.split(/[/\\]/);
       for (let i = Math.min(tokens.length, 2); 0 < i; i--) {
         const pkg = tokens.slice(0, i).join('/');
-        if (pkg in orgGependencies) {
-          dependencies[pkg] = orgGependencies[pkg];
+        if (pkg in orgDependencies) {
+          dependencies[pkg] = orgDependencies[pkg];
           break;
         }
       }
