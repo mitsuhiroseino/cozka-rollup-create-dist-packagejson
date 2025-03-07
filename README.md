@@ -1,6 +1,6 @@
-# @gusok/rollup-create-dist-packagejson
+# @cozka/rollup-create-dist-packagejson
 
-`@gusok/rollup-create-dist-packagejson` is a Rollup plugin that edits the `package.json` during the build process and outputs it in the appropriate format in the output directory.  
+`@cozka/rollup-create-dist-packagejson` is a Rollup plugin that edits the `package.json` during the build process and outputs it in the appropriate format in the output directory.  
 It was created with the goal of outputting only the minimum required fields in the `package.json` for publishing to npm,  
 as well as assisting in publishing the library with a flat directory structure.
 
@@ -9,7 +9,7 @@ as well as assisting in publishing the library with a flat directory structure.
 ## Installation
 
 ```sh
-npm install @gusok/rollup-create-dist-packagejson --save-dev
+npm install @cozka/rollup-create-dist-packagejson --save-dev
 ```
 
 ## Usage
@@ -17,7 +17,7 @@ npm install @gusok/rollup-create-dist-packagejson --save-dev
 Configure it in `rollup.config.js` as follows:
 
 ```js
-import createDistPackageJson from '@gusok/rollup-create-dist-packagejson';
+import createDistPackageJson from '@cozka/rollup-create-dist-packagejson';
 
 export default {
   input: 'src/index.ts',

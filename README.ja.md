@@ -1,6 +1,6 @@
-# @gusok/rollup-create-dist-packagejson
+# @cozka/rollup-create-dist-packagejson
 
-`@gusok/rollup-create-dist-packagejson` は、Rollup のビルドプロセス中に `package.json` を編集し、  
+`@cozka/rollup-create-dist-packagejson` は、Rollup のビルドプロセス中に `package.json` を編集し、  
 出力ディレクトリに適切な形式で出力するためのプラグインです。  
 npmへ公開する`package.json`に最低限の項目のみ出力すること、  
 及びフラットなディレクトリ構成でライブラリを公開することへの補助を目的に作成されました。
@@ -10,7 +10,7 @@ npmへ公開する`package.json`に最低限の項目のみ出力すること、
 ## インストール
 
 ```sh
-npm install @gusok/rollup-create-dist-packagejson --save-dev
+npm install @cozka/rollup-create-dist-packagejson --save-dev
 ```
 
 ## 使い方
@@ -18,7 +18,7 @@ npm install @gusok/rollup-create-dist-packagejson --save-dev
 `rollup.config.js` に以下のように設定してください。
 
 ```js
-import createDistPackageJson from '@gusok/rollup-create-dist-packagejson';
+import createDistPackageJson from '@cozka/rollup-create-dist-packagejson';
 
 export default {
   input: 'src/index.ts',

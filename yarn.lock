@@ -384,6 +384,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cozka/rollup-create-dist-packagejson@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@cozka/rollup-create-dist-packagejson@workspace:."
+  dependencies:
+    "@types/fs-extra": "npm:^11"
+    "@types/jest": "npm:^29.5.14"
+    "@types/node": "npm:^22.13.4"
+    fast-glob: "npm:^3.3.3"
+    fs-extra: "npm:^11.3.0"
+    jest: "npm:^29.7.0"
+    prettier: "npm:^3.5.1"
+    prettier-plugin-organize-imports: "npm:^4.1.0"
+    prettier-plugin-packagejson: "npm:^2.5.9"
+    rimraf: "npm:^6.0.1"
+    rollup: "npm:^4.0.0"
+    sort-package-json: "npm:^2.15.0"
+    tslib: "npm:^2.8.1"
+    tsx: "npm:^4.19.2"
+    type-fest: "npm:^4.35.0"
+    typescript: "npm:^5.7.3"
+  peerDependencies:
+    rollup: ^4.0.0
+  languageName: unknown
+  linkType: soft
+
 "@esbuild/aix-ppc64@npm:0.23.1":
   version: 0.23.1
   resolution: "@esbuild/aix-ppc64@npm:0.23.1"
@@ -551,31 +576,6 @@ __metadata:
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
-
-"@gusok/rollup-create-dist-packagejson@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "@gusok/rollup-create-dist-packagejson@workspace:."
-  dependencies:
-    "@types/fs-extra": "npm:^11"
-    "@types/jest": "npm:^29.5.14"
-    "@types/node": "npm:^22.13.4"
-    fast-glob: "npm:^3.3.3"
-    fs-extra: "npm:^11.3.0"
-    jest: "npm:^29.7.0"
-    prettier: "npm:^3.5.1"
-    prettier-plugin-organize-imports: "npm:^4.1.0"
-    prettier-plugin-packagejson: "npm:^2.5.9"
-    rimraf: "npm:^6.0.1"
-    rollup: "npm:^4.0.0"
-    sort-package-json: "npm:^2.15.0"
-    tslib: "npm:^2.8.1"
-    tsx: "npm:^4.19.2"
-    type-fest: "npm:^4.35.0"
-    typescript: "npm:^5.7.3"
-  peerDependencies:
-    rollup: ^4.0.0
-  languageName: unknown
-  linkType: soft
 
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
