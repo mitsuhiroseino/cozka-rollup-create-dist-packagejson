@@ -90,9 +90,12 @@ export default function createDistPackageJson(
       bundle: OutputBundle,
     ) => {
       // 開発時用のpackage.jsonを取得
-      const orgPackageJson = fs.readJsonSync(inputDir, {
-        encoding: 'utf8',
-      });
+      const orgPackageJson = fs.readJsonSync(
+        path.join(inputDir, 'package.json'),
+        {
+          encoding: 'utf8',
+        },
+      );
       // ビルドされたパッケージ用のpackage.jsonのベースを取得
       const packageJson =
         typeof content === 'function'
@@ -136,10 +139,14 @@ export default function createDistPackageJson(
       // ビルド先に出力
       const outputPath =
         outputDir || outputOptions.dir || path.dirname(outputOptions.file);
-      fs.writeJsonSync(outputPath, sortPackageJson(processor(packageJson)), {
-        encoding: 'utf8',
-        spaces: 2,
-      });
+      fs.writeJsonSync(
+        path.join(outputPath, 'package.json'),
+        sortPackageJson(processor(packageJson)),
+        {
+          encoding: 'utf8',
+          spaces: 2,
+        },
+      );
     },
   };
 }
