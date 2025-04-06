@@ -48,6 +48,10 @@ export type CreateDistPackageJsonOptions = {
 };
 
 const WORKSPACE_DEPS = /^(?:\*|workspace:.+|portal:.+)$/;
+
+/**
+ * package.jsonから継承するプロパティのリスト
+ */
 const INHERIT_PROPS = [
   'name',
   'version',
@@ -62,11 +66,16 @@ const INHERIT_PROPS = [
   'engines',
   'keywords',
 ];
+
+/**
+ * package.jsonから依存関係として参照するプロパティ
+ */
 const DEPENDENCIES_PROP_NAMES = [
-  'dependencies',
-  'peerDependencies',
-  'optionalDependencies',
-];
+  { dev: 'dependencies', dist: 'dependencies' },
+  { dev: 'peerDependencies', dist: 'peerDependencies' },
+  { dev: 'optionalDependencies', dist: 'optionalDependencies' },
+  { dev: 'devDependencies', dist: 'dependencies' },
+] as const;
 
 /**
  * package.jsonを編集しビルド結果のディレクトリに出力するプラグイン
@@ -113,17 +122,27 @@ export default function createDistPackageJson(
       }, new Set<string>());
 
       // dependencies関連の項目を処理
-      for (const propName of DEPENDENCIES_PROP_NAMES) {
+      const allDeps = new Set<string>();
+      for (const { dev, dist } of DEPENDENCIES_PROP_NAMES) {
         const dependencies = _createDependencies(
-          orgPackageJson[propName] as Record<string, string>,
-          packageJson[propName] as Record<string, string>,
+          orgPackageJson[dev] as Record<string, string>,
           imports,
           packagesDir,
         );
         if (dependencies) {
-          packageJson[propName] = dependencies;
-        } else {
-          delete packageJson[propName];
+          const pkgs: Record<string, string> = {};
+          for (const pkg in dependencies) {
+            if (!allDeps.has(pkg)) {
+              pkgs[pkg] = dependencies[pkg];
+              allDeps.add(pkg);
+            }
+          }
+          if (Object.keys(pkgs).length) {
+            packageJson[dist] = {
+              ...packageJson[dist],
+              ...pkgs,
+            };
+          }
         }
       }
 
@@ -172,14 +191,12 @@ function _getPckageVersions(packagesDir: string) {
 /**
  * パッケージの依存関係を定義した項目を作成する
  * @param orgDependencies 元のpackage.jsonの依存関係
- * @param userDependencies ユーザーの指定した依存関係
  * @param imports 全ソースのimport情報
  * @param packagesDir ワークスページのパッケージの保存先ディレクトリ
  * @returns 依存関係
  */
 function _createDependencies(
   orgDependencies: Record<string, string>,
-  userDependencies: Record<string, string>,
   imports: Set<string>,
   packagesDir: string,
 ) {
@@ -187,11 +204,6 @@ function _createDependencies(
   const dependencies = orgDependencies
     ? _getExternalDependencies(imports, orgDependencies)
     : {};
-
-  if (userDependencies) {
-    // baseのdependenciesとマージ
-    Object.assign(dependencies, userDependencies);
-  }
 
   // ワークスペース内のdependenciesは実際のバージョンに置き換え
   let versions;
