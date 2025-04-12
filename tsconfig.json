@@ -19,11 +19,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "typeRoots": ["node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
     "strictNullChecks": false,
     "types": ["jest", "node"],
     "strictPropertyInitialization": false,
-    "baseUrl": "src",
+    "baseUrl": "src"
   },
   "include": ["src"],
   "exclude": ["src/__test__"]
