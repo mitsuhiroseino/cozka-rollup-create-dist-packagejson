@@ -45,6 +45,12 @@ export type CreateDistPackageJsonOptions = {
    * 出力前の加工処理
    */
   processor?: (packageJson: PackageJson) => PackageJson;
+
+  /**
+   * ワークスペースの依存関係を保持するかどうか
+   * デフォルトは`false`
+   */
+  keepWorkspaceDeps?: boolean;
 };
 
 const WORKSPACE_DEPS = /^(?:\*|workspace:.+|portal:.+)$/;
@@ -90,10 +96,25 @@ export default function createDistPackageJson(
     packagesDir = '..',
     outputDir,
     processor = (pkgJson) => pkgJson,
+    keepWorkspaceDeps,
   } = options;
+  const imports = new Set<string>();
+  const inputDirPath = path.normalize(path.resolve(inputDir));
 
   return {
     name: 'create-dist-packagejson',
+    moduleParsed: (moduleInfo) => {
+      const importedIds = moduleInfo.importedIds || [];
+      for (const importedId of importedIds) {
+        if (
+          !importedId.startsWith(inputDirPath) &&
+          !inputDirPath.startsWith('_')
+        ) {
+          // バンドルされるモジュール内でimportしている外部ライブラリを全て取得
+          imports.add(importedId);
+        }
+      }
+    },
     generateBundle: async (
       outputOptions: NormalizedOutputOptions,
       bundle: OutputBundle,
@@ -111,16 +132,6 @@ export default function createDistPackageJson(
           ? content(orgPackageJson)
           : { ...content };
 
-      // バンドルされるモジュール内でimportしているものを全て取得
-      const imports = Object.values(bundle).reduce((result, chunk) => {
-        if ('imports' in chunk) {
-          chunk.imports.forEach((item) => {
-            result.add(item);
-          });
-        }
-        return result;
-      }, new Set<string>());
-
       // dependencies関連の項目を処理
       const allDeps = new Set<string>();
       for (const { dev, dist } of DEPENDENCIES_PROP_NAMES) {
@@ -128,6 +139,7 @@ export default function createDistPackageJson(
           orgPackageJson[dev] as Record<string, string>,
           imports,
           packagesDir,
+          keepWorkspaceDeps,
         );
         if (dependencies) {
           const pkgs: Record<string, string> = {};
@@ -158,6 +170,7 @@ export default function createDistPackageJson(
       // ビルド先に出力
       const outputPath =
         outputDir || outputOptions.dir || path.dirname(outputOptions.file);
+      fs.ensureDirSync(outputPath);
       fs.writeJsonSync(
         path.join(outputPath, 'package.json'),
         sortPackageJson(processor(packageJson)),
@@ -191,30 +204,34 @@ function _getPckageVersions(packagesDir: string) {
 /**
  * パッケージの依存関係を定義した項目を作成する
  * @param orgDependencies 元のpackage.jsonの依存関係
- * @param imports 全ソースのimport情報
+ * @param imports 全ソースの外部ライブラリへのimport情報
  * @param packagesDir ワークスページのパッケージの保存先ディレクトリ
+ * @param keepWorkspaceDeps ワークスペースの依存関係を保持するかどうか
  * @returns 依存関係
  */
 function _createDependencies(
   orgDependencies: Record<string, string>,
   imports: Set<string>,
   packagesDir: string,
+  keepWorkspaceDeps: boolean,
 ) {
   // 全てのimportの中から、開発時用のpackage.jsonのdependenciesに含まれる外部のパッケージを取得
   const dependencies = orgDependencies
     ? _getExternalDependencies(imports, orgDependencies)
     : {};
 
-  // ワークスペース内のdependenciesは実際のバージョンに置き換え
-  let versions;
-  for (const pkg in dependencies) {
-    if (WORKSPACE_DEPS.test(dependencies[pkg])) {
-      if (!versions) {
-        versions = _getPckageVersions(packagesDir);
-      }
-      const version = versions[pkg];
-      if (version) {
-        dependencies[pkg] = version;
+  if (!keepWorkspaceDeps) {
+    // ワークスペース内のdependenciesは実際のバージョンに置き換え
+    let versions;
+    for (const pkg in dependencies) {
+      if (WORKSPACE_DEPS.test(dependencies[pkg])) {
+        if (!versions) {
+          versions = _getPckageVersions(packagesDir);
+        }
+        const version = versions[pkg];
+        if (version) {
+          dependencies[pkg] = version;
+        }
       }
     }
   }
@@ -240,14 +257,12 @@ function _getExternalDependencies(
 ) {
   const dependencies: Record<string, string> = {};
   imports.forEach((item) => {
-    if (!item.endsWith('.js')) {
-      const tokens = item.split(/[/\\]/);
-      for (let i = Math.min(tokens.length, 2); 0 < i; i--) {
-        const pkg = tokens.slice(0, i).join('/');
-        if (pkg in orgDependencies) {
-          dependencies[pkg] = orgDependencies[pkg];
-          break;
-        }
+    const tokens = item.split(/[/\\]/);
+    for (let i = tokens.length; 0 < i; i--) {
+      const pkg = tokens.slice(0, i).join('/');
+      if (pkg in orgDependencies) {
+        dependencies[pkg] = orgDependencies[pkg];
+        break;
       }
     }
   });
