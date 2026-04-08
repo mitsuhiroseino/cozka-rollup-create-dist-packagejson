@@ -1,6 +1,7 @@
 {
   "name": "@cozka/rollup-create-dist-packagejson",
-  "version": "0.9.1",
+  "version": "0.10.0",
+  "description": "[DEPRECATED] Please use '@niche-works/rollup-plugin-dist-package' instead.",
   "keywords": [
     "rollup",
     "plugin",

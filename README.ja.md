@@ -1,77 +1,17 @@
-# @cozka/rollup-create-dist-packagejson
+# @cozka/rollup-create-dist-packagejson (DEPRECATED)
 
-`@cozka/rollup-create-dist-packagejson` は、Rollup のビルドプロセス中に `package.json` を編集し、  
-出力ディレクトリに適切な形式で出力するためのプラグインです。  
-npmへ公開する`package.json`に最低限の項目のみ出力すること、  
-及びフラットなディレクトリ構成でライブラリを公開することへの補助を目的に作成されました。
+> **警告**: このパッケージはメンテナンスを終了しました。
 
-**[English README is available here](./README.md)**
+後継として、 **[`@niche-works/rollup-plugin-dist-package`](https://www.npmjs.com/package/@niche-works/rollup-plugin-dist-package)** を公開しました。
 
-## インストール
+## 移行方法
 
-```sh
-npm install @cozka/rollup-create-dist-packagejson --save-dev
+既存のパッケージをアンインストールし、新しいパッケージをインストールしてください。
+
+```bash
+npm uninstall @cozka/rollup-create-dist-packagejson
+npm install @niche-works/rollup-plugin-dist-package
 ```
-
-## 使い方
-
-`rollup.config.js` に以下のように設定してください。
-
-```js
-import createDistPackageJson from '@cozka/rollup-create-dist-packagejson';
-
-export default {
-  input: 'src/index.ts',
-  output: {
-    dir: 'dist',
-    format: 'esm',
-  },
-  plugins: [
-    createDistPackageJson({
-      content: {
-        main: './index.js',
-        types: './index.d.ts',
-      },
-    }),
-  ],
-};
-```
-
-## オプション
-
-### `content`
-
-- `Partial<PackageJson>` または `(packageJson: PackageJson) => Partial<PackageJson>`
-- 生成する `package.json` の内容を指定できます。
-
-### `inheritProps`
-
-- `string[]`
-- 元の `package.json` から継承するプロパティを指定します。
-- デフォルト: `['name', 'version', 'description', 'repository', 'bugs', 'homepage', 'author', 'contributors', 'license', 'type', 'engines', 'keywords']`
-
-### `inputDir`
-
-- `string | undefined`
-- 元の `package.json` のあるディレクトリを指定します。
-- デフォルト: カレントディレクトリ
-
-### `packagesDir`
-
-- `string | undefined`
-- ワークスペースのパッケージが格納されているディレクトリのパスを指定します。
-- デフォルト: `'..'`
-
-### `outputDir`
-
-- `string | undefined`
-- `package.json` の出力先ディレクトリを指定します。
-- デフォルト: `rollup` の `output` 設定から取得
-
-### `processor`
-
-- `(packageJson: PackageJson) => PackageJson`
-- 最終的に `package.json` を出力する前に加工処理を行います。
 
 ## ライセンス
 
